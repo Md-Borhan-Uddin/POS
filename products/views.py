@@ -1,14 +1,17 @@
+from typing import Any
 from django.db.models import Q
-from django.shortcuts import redirect
+from django.http import HttpRequest, HttpResponse,HttpResponseRedirect
+from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import ListView,TemplateView, CreateView, UpdateView,DeleteView
 from products.froms import ProductForm
+from django.views.generic.edit import BaseDeleteView
 
 
 
 from products.models import Product
 
-# Create your views here.
+
 
 class ProductFormView(TemplateView):
     template_name = "product/product_form.html"
@@ -72,3 +75,8 @@ class ProductUpdateView(UpdateView):
 class ProductDeleteView(DeleteView):
     model = Product
     success_url = reverse_lazy('products:list')
+    template_name = 'product/product_table.html'
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.delete(request)
+        return render(request,self.template_name,{'products':Product.objects.all()})
