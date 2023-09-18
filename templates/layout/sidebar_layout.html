@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+
+
+{% block body %}
+
+    {% include "common/sidebar.html" %}
+		
+        <div class="antialiased bg-gray-50">
+    
+
+            <main class="p-4 md:ml-64 h-auto pt-20 min-h-screen">
+                {% block content %}{% endblock content %}
+            </main>
+            <div class="md:ml-64">
+                {% include "common/footer.html" %}
+            </div>
+          </div>
+
+	
+
+
+
+
+{% endblock body %}
+
+
