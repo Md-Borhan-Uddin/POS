@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.http import HttpRequest, HttpResponse,HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import ListView,TemplateView, CreateView, UpdateView,DeleteView
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import timezone
@@ -72,7 +73,7 @@ class ProductTableView(TemplateView):
 
 class SaleListView(ListView):
     model = SaleProduct
-    template_name = "inventory/sales.html"
+    template_name = "inventory/sale/sales.html"
     context_object_name = 'sales'
     paginate_by = 10
 
@@ -85,10 +86,14 @@ class SaleListView(ListView):
         return context
 
 
-class SaleCreateView(CreateView):
+class SaleCreateView(View):
     model = SaleProduct
     success_url = reverse_lazy('inventory:sales')
     form_class = SalesForm
+    template_name = "inventory/sale/sales.html"
+
+    
+    
     
     
     def get_invoice_number(self):
@@ -99,16 +104,51 @@ class SaleCreateView(CreateView):
             id = 1
         return timezone.now().strftime('%Y%m%d')+str(id)
     
-    def post(self, request, *args, **kwargs):
-        sale_invoice,create = SalesInvoice.objects.get_or_create(
 
-        )
-        return super().post(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['invoice_number'] = self.get_invoice_number()
-        return context
+    def get(self,request,*args, **kwargs):
+        context = {
+            'form':self.form_class()
+        }
+        return render(request,self.template_name,context)
+    
+    def post(self, request,in_no=None, *args, **kwargs):
+        
+        invoice = None
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            sale = form.save(commit=False)
+            price = sale.product.selling_price*sale.quantity
+            if sale.offer:
+                sale.total = price - sale.offer
+            else:
+                sale.total = price
+            sale.save()
+            if in_no:
+                invoice = SalesInvoice.objects.get(
+                    invoice_no = in_no
+                )
+            else:
+                invoice = SalesInvoice.objects.create(
+                    invoice_no = self.get_invoice_number(),
+                    seller = request.user
+                    
+                )
+            invoice.sale_product.add(sale)
+            context = {
+                'form':self.form_class(),
+                'invoice': invoice
+            }
+        else:
+            context = {
+                'form':form,
+                'invoice': invoice
+            }  
+        
+        return render(request,'inventory/sale/body.html',context)
+    
+   
+    
+    
 
 
 class SaleUpdateView(UpdateView):

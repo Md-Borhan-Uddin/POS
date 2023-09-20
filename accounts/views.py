@@ -5,7 +5,7 @@ from django.contrib.auth import views
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from django.views.generic import TemplateView, RedirectView
-from django.contrib.auth import logout
+from django.contrib.auth import logout, login
 
 from accounts.forms import LoginForm, CustomUserCreationForm
 from .models import User
@@ -21,6 +21,11 @@ class LoginView(views.LoginView):
         if request.user.is_authenticated:
             return redirect(self.success_url)
         return super().get(request, *args, **kwargs) 
+    
+    def form_valid(self, form):
+        login(self.request,form.get_user())
+        return redirect(self.success_url)
+    
 
 
 
@@ -37,4 +42,4 @@ class UserCreateView(CreateView):
     model = User
     template_name = "accounts/register.html"
     form_class = CustomUserCreationForm
-    success_url = reverse_lazy('home')  
+    success_url = reverse_lazy('core:home')  
